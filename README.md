@@ -43,14 +43,19 @@ cd azure-ms-teams-bot
 cp .env.example .env
 nano .env
 
-# 3. Probar conectividad
+# 3. Modo Mock activado por defecto (sin credenciales de Ariba necesarias)
+# ARIBA_USE_MOCK=True ya está configurado en .env.example
+
+# 4. Probar conectividad
 python scripts/test_services.py
 
-# 4. Ejecutar el bot
+# 5. Ejecutar el bot
 ./scripts/start_dev.sh
 ```
 
 **👉 Ver [QUICKSTART.md](QUICKSTART.md) para instrucciones paso a paso completas.**
+
+**💡 Para desarrollo sin credenciales de SAP Ariba, el modo mock está activado por defecto. Ver [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md).**
 
 ## Arquitectura
 
@@ -166,10 +171,12 @@ python scripts/test_services.py
 - Sugerencias y autocompletado
 
 ### 4. Integración SAP Ariba
-- APIs REST/SOAP autorizadas
+- **Modo Mock** para desarrollo sin credenciales reales 🎭
+- **Modo Real** con APIs REST/SOAP autorizadas 🌐
 - Autenticación OAuth2
 - Cache inteligente
 - Rate limiting y retry logic
+- Cambio entre modos mediante configuración
 
 ### 5. Escalabilidad y Modularidad
 - Arquitectura de microservicios
@@ -180,6 +187,7 @@ python scripts/test_services.py
 ## 📚 Documentación
 
 - **[🚀 Quickstart](QUICKSTART.md)** - ¡Pon el bot en marcha en 10 minutos!
+- **[🔐 Autenticación y Modos](docs/AUTHENTICATION.md)** - Guía de autenticación Teams/Entra y modo mock
 - **[📖 Guía de Instalación](docs/INSTALLATION.md)** - Instrucciones detalladas de instalación y configuración
 - **[👤 Guía de Usuario](docs/USER_GUIDE.md)** - Cómo usar el bot
 - **[📋 Lista de Tareas](docs/TODO.md)** - Roadmap y mejoras futuras

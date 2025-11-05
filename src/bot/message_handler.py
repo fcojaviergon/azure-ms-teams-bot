@@ -6,7 +6,7 @@ from botbuilder.core import TurnContext
 from src.utils.logger import get_logger
 from src.utils.validators import extract_ariba_ids, sanitize_input
 from src.services.openai_service import openai_service
-from src.services.ariba_service import ariba_service
+from src.services.ariba_factory import ariba
 from src.services.search_service import search_service
 from src.models.conversation import ConversationContext, Message, UserProfile
 from src.bot.cards import AdaptiveCardBuilder
@@ -117,7 +117,7 @@ class MessageHandler:
                 po_id = po_ids[0]
                 logger.info(f"Fetching PO: {po_id}")
 
-                po = await ariba_service.get_purchase_order_by_id(po_id)
+                po = await ariba.get_purchase_order_by_id(po_id)
 
                 if po:
                     card = self.card_builder.create_purchase_order_card(
@@ -135,7 +135,7 @@ class MessageHandler:
             else:
                 # List recent POs
                 logger.info("Listing recent purchase orders")
-                response = await ariba_service.get_purchase_orders(page_size=5)
+                response = await ariba.get_purchase_orders(page_size=5)
 
                 if response.records:
                     card = self.card_builder.create_list_card(
@@ -169,7 +169,7 @@ class MessageHandler:
                 pr_id = pr_ids[0]
                 logger.info(f"Searching for PR: {pr_id}")
 
-                response = await ariba_service.get_purchase_requisitions(
+                response = await ariba.get_purchase_requisitions(
                     filters={"pr_number": pr_id}, page_size=1
                 )
 
@@ -184,7 +184,7 @@ class MessageHandler:
             else:
                 # List recent PRs
                 logger.info("Listing recent purchase requisitions")
-                response = await ariba_service.get_purchase_requisitions(
+                response = await ariba.get_purchase_requisitions(
                     page_size=5
                 )
 
@@ -220,7 +220,7 @@ class MessageHandler:
             if "names" in entities and entities["names"]:
                 filters["name"] = entities["names"][0]
 
-            response = await ariba_service.get_suppliers(
+            response = await ariba.get_suppliers(
                 filters=filters, page_size=10
             )
 
@@ -269,7 +269,7 @@ class MessageHandler:
 
             logger.info(f"Getting status for {doc_type}: {doc_id}")
 
-            status_data = await ariba_service.get_document_status(doc_id, doc_type)
+            status_data = await ariba.get_document_status(doc_id, doc_type)
 
             response_text = f"**Estado de {doc_id}:**\n\n"
             response_text += f"Estado actual: **{status_data.get('status', 'N/A')}**\n"
