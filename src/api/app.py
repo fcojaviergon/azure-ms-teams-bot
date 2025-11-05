@@ -10,6 +10,7 @@ from botbuilder.core import (
     TurnContext,
 )
 from botbuilder.schema import Activity
+from botframework.connector.auth import MicrosoftAppCredentials
 
 from src.config.settings import settings
 from src.bot.teams_bot import TeamsBot
@@ -20,17 +21,36 @@ from src.utils.logger import get_logger
 logger = get_logger(__name__)
 
 
+# Custom credentials class for Single Tenant bots
+class SingleTenantMicrosoftAppCredentials(MicrosoftAppCredentials):
+    """Custom credentials that use tenant-specific OAuth endpoint."""
+    
+    def __init__(self, app_id: str, app_password: str, tenant_id: str):
+        super().__init__(app_id, app_password)
+        # Override the OAuth endpoint for this instance
+        self.oauth_endpoint = (
+            f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
+        )
+        logger.info(f"Created credentials with OAuth endpoint: {self.oauth_endpoint}")
+
+
 # Bot adapter configuration
 ADAPTER_SETTINGS = BotFrameworkAdapterSettings(
     app_id=settings.microsoft_app_id,
     app_password=settings.microsoft_app_password,
 )
 
-# If tenant ID is specified, configure for Single Tenant bot
-if settings.microsoft_app_tenant_id:
+# Create adapter with custom credentials if tenant ID is specified
+if settings.microsoft_app_tenant_id and settings.microsoft_app_id and settings.microsoft_app_password:
     logger.info(f"Configuring Single Tenant bot with tenant: {settings.microsoft_app_tenant_id}")
-    # For Single Tenant bots, the tenant ID should be used in authentication
-    # This is handled automatically by the SDK when app_id and app_password are set
+    # Create custom credentials
+    credentials = SingleTenantMicrosoftAppCredentials(
+        settings.microsoft_app_id,
+        settings.microsoft_app_password,
+        settings.microsoft_app_tenant_id
+    )
+    # Override the credentials in adapter settings
+    ADAPTER_SETTINGS.credentials = credentials
 
 # Create adapter
 ADAPTER = BotFrameworkAdapter(ADAPTER_SETTINGS)
