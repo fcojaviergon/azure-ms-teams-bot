@@ -2,28 +2,55 @@
 
 Bot de Microsoft Teams con arquitectura nativa de Azure e integración con SAP Ariba.
 
-## ⚠️ Estado del Proyecto
+## ✅ Estado del Proyecto
 
-**🚧 TRABAJO EN PROGRESO - MVP PARCIALMENTE COMPLETO 🚧**
+**🎉 MVP FUNCIONAL COMPLETO - LISTO PARA USAR 🎉**
 
-### ✅ Implementado (Fase 1)
-- ✅ Arquitectura modular en 3 capas
-- ✅ Servicios de Azure OpenAI (GPT-4)
-- ✅ Servicios de Azure Cognitive Search
-- ✅ Integración SAP Ariba con OAuth2
-- ✅ Sistema de caché Redis
-- ✅ Modelos de datos y configuración
-- ✅ Documentación de instalación y uso
+### ✅ Implementado
+- ✅ Arquitectura modular en 3 capas (Conversación, Lógica, Datos)
+- ✅ Bot de Microsoft Teams completo con Activity Handler
+- ✅ API REST con aiohttp y endpoints de salud
+- ✅ Azure OpenAI (GPT-4) para NLP e intenciones
+- ✅ Azure Cognitive Search para búsqueda semántica
+- ✅ Integración SAP Ariba con OAuth2 y retry logic
+- ✅ Sistema de caché Redis con TTL
+- ✅ Adaptive Cards para UI rica en Teams
+- ✅ Dialog Manager para gestión de contexto
+- ✅ Message Handler con routing de intenciones
+- ✅ Sistema de logging con Application Insights
+- ✅ Scripts de configuración y testing
+- ✅ Documentación completa
 
-### 🚧 Pendiente (Fase 2)
-- ❌ Bot de Teams (capa de conversación)
-- ❌ API REST (endpoints HTTP)
-- ❌ Docker y docker-compose
-- ❌ Azure DevOps CI/CD pipelines
-- ❌ Infrastructure as Code (Bicep)
-- ❌ Tests unitarios e integración
+### 🚧 Pendiente (Mejoras Futuras)
+- ⏳ Docker y docker-compose
+- ⏳ Azure DevOps CI/CD pipelines
+- ⏳ Infrastructure as Code (Bicep)
+- ⏳ Tests unitarios e integración
+- ⏳ Power BI Embedded
+- ⏳ Power Automate/Logic Apps
 
-**📖 Para más detalles sobre lo que falta, ver: [docs/TODO.md](docs/TODO.md)**
+**📖 Ver [docs/TODO.md](docs/TODO.md) para el roadmap completo**
+
+## ⚡ Inicio Rápido
+
+```bash
+# 1. Clonar y configurar
+git clone https://github.com/fcojaviergon/azure-ms-teams-bot.git
+cd azure-ms-teams-bot
+./scripts/setup_local.sh
+
+# 2. Configurar .env con tus credenciales
+cp .env.example .env
+nano .env
+
+# 3. Probar conectividad
+python scripts/test_services.py
+
+# 4. Ejecutar el bot
+./scripts/start_dev.sh
+```
+
+**👉 Ver [QUICKSTART.md](QUICKSTART.md) para instrucciones paso a paso completas.**
 
 ## Arquitectura
 
@@ -152,9 +179,10 @@ Bot de Microsoft Teams con arquitectura nativa de Azure e integración con SAP A
 
 ## 📚 Documentación
 
-- **[Guía de Instalación](docs/INSTALLATION.md)** - Instrucciones detalladas de instalación y configuración
-- **[Guía de Usuario](docs/USER_GUIDE.md)** - Cómo usar el bot (cuando esté completo)
-- **[Lista de Tareas](docs/TODO.md)** - Tareas pendientes y plan de implementación
+- **[🚀 Quickstart](QUICKSTART.md)** - ¡Pon el bot en marcha en 10 minutos!
+- **[📖 Guía de Instalación](docs/INSTALLATION.md)** - Instrucciones detalladas de instalación y configuración
+- **[👤 Guía de Usuario](docs/USER_GUIDE.md)** - Cómo usar el bot
+- **[📋 Lista de Tareas](docs/TODO.md)** - Roadmap y mejoras futuras
 
 ## Requisitos Previos
 
@@ -191,19 +219,28 @@ az deployment group create \
   --template-file main.bicep
 ```
 
-5. **Ejecutar localmente (desarrollo)**
+5. **Probar conectividad**
 ```bash
-# ⚠️ PENDIENTE: El bot aún no está implementado
-# Cuando esté completo:
-python -m src.api.app
+source venv/bin/activate
+python scripts/test_services.py
 ```
 
-6. **Ejecutar con Docker**
+6. **Ejecutar localmente (desarrollo)**
 ```bash
-# ⚠️ PENDIENTE: Docker aún no está configurado
-# Cuando esté completo:
-docker-compose up -d
+# Opción 1: Script de desarrollo
+./scripts/start_dev.sh
+
+# Opción 2: Directamente
+python run.py
+
+# El bot estará disponible en http://localhost:3978
+# Endpoint de mensajes: http://localhost:3978/api/messages
 ```
+
+7. **Probar con Bot Framework Emulator**
+- Descargar [Bot Framework Emulator](https://github.com/Microsoft/BotFramework-Emulator/releases)
+- Conectar a `http://localhost:3978/api/messages`
+- Usar tus credenciales MICROSOFT_APP_ID y MICROSOFT_APP_PASSWORD
 
 ## Deployment
 
