@@ -202,7 +202,11 @@ def create_ariba_knowledge_index():
 def upload_sample_documents():
     """Sube documentos de ejemplo al índice"""
     from azure.search.documents import SearchClient
-    from datetime import datetime
+    from datetime import datetime, timezone
+    
+    # Helper para crear timestamp
+    def now_iso():
+        return datetime.now(timezone.utc).isoformat()
     
     endpoint = os.getenv("AZURE_SEARCH_ENDPOINT")
     api_key = os.getenv("AZURE_SEARCH_API_KEY")
@@ -214,6 +218,7 @@ def upload_sample_documents():
     # Documentos de ejemplo
     sample_docs = [
         {
+            "@search.action": "upload",
             "id": "1",
             "title": "Crear Requisición de Compra en SAP Ariba",
             "content": "Para crear una requisición de compra en SAP Ariba, navega al módulo de Procurement y selecciona 'Nueva Requisición'. Completa los campos obligatorios como descripción del artículo, cantidad, y centro de costos.",
@@ -223,8 +228,8 @@ def upload_sample_documents():
             "tags": ["requisicion", "compra", "procurement"],
             "document_type": "tutorial",
             "source_url": "https://help.sap.com/ariba/procurement/requisitions",
-            "created_date": datetime.utcnow().isoformat() + "Z",
-            "modified_date": datetime.utcnow().isoformat() + "Z",
+            "created_date": now_iso(),
+            "modified_date": now_iso(),
             "priority": 1,
             "language": "es",
             "ariba_module": "Procurement",
@@ -232,6 +237,7 @@ def upload_sample_documents():
             "related_apis": ["Requisition API", "Procurement API"],
         },
         {
+            "@search.action": "upload",
             "id": "2",
             "title": "Aprobar Órdenes de Compra",
             "content": "El proceso de aprobación de órdenes de compra requiere revisar los detalles de la orden, verificar el presupuesto disponible, y aprobar o rechazar según las políticas de la empresa.",
@@ -241,8 +247,8 @@ def upload_sample_documents():
             "tags": ["aprobacion", "orden-compra", "workflow"],
             "document_type": "process",
             "source_url": "https://help.sap.com/ariba/procurement/approvals",
-            "created_date": datetime.utcnow().isoformat() + "Z",
-            "modified_date": datetime.utcnow().isoformat() + "Z",
+            "created_date": now_iso(),
+            "modified_date": now_iso(),
             "priority": 1,
             "language": "es",
             "ariba_module": "Procurement",
@@ -250,6 +256,7 @@ def upload_sample_documents():
             "related_apis": ["Approval API", "Purchase Order API"],
         },
         {
+            "@search.action": "upload",
             "id": "3",
             "title": "Gestión de Proveedores",
             "content": "La gestión de proveedores en SAP Ariba incluye el registro de nuevos proveedores, evaluación de desempeño, y mantenimiento de la información de contacto y capacidades.",
@@ -259,8 +266,8 @@ def upload_sample_documents():
             "tags": ["proveedor", "supplier", "registro"],
             "document_type": "guide",
             "source_url": "https://help.sap.com/ariba/supplier-management",
-            "created_date": datetime.utcnow().isoformat() + "Z",
-            "modified_date": datetime.utcnow().isoformat() + "Z",
+            "created_date": now_iso(),
+            "modified_date": now_iso(),
             "priority": 2,
             "language": "es",
             "ariba_module": "Supplier Management",
@@ -271,6 +278,12 @@ def upload_sample_documents():
     
     try:
         print(f"\n📤 Subiendo {len(sample_docs)} documentos de ejemplo...")
+        
+        # Debug: imprimir primer documento
+        import json
+        print(f"\n🔍 Debug - Primer documento:")
+        print(json.dumps(sample_docs[0], indent=2, ensure_ascii=False))
+        
         result = search_client.upload_documents(documents=sample_docs)
         
         success_count = sum(1 for r in result if r.succeeded)
@@ -285,6 +298,8 @@ def upload_sample_documents():
         
     except Exception as e:
         print(f"❌ Error al subir documentos: {str(e)}")
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")
         return False
 
 

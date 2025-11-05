@@ -56,24 +56,23 @@ class SearchService:
 
             # Perform search
             results = []
-            async with self.client:
-                search_results = await self.client.search(
-                    search_text=query,
-                    filter=filters,
-                    top=top,
-                    include_total_count=True,
-                )
+            search_results = await self.client.search(
+                search_text=query,
+                filter=filters,
+                top=top,
+                include_total_count=True,
+            )
 
-                async for result in search_results:
-                    results.append(
-                        {
-                            "score": result.get("@search.score"),
-                            "content": result.get("content"),
-                            "title": result.get("title"),
-                            "category": result.get("category"),
-                            "metadata": result.get("metadata", {}),
-                        }
-                    )
+            async for result in search_results:
+                results.append(
+                    {
+                        "score": result.get("@search.score"),
+                        "content": result.get("content"),
+                        "title": result.get("title"),
+                        "category": result.get("category"),
+                        "metadata": result.get("metadata", {}),
+                    }
+                )
 
             logger.info(f"Search returned {len(results)} results for: {query}")
 
@@ -115,24 +114,23 @@ class SearchService:
                     return cached_results
 
             results = []
-            async with self.client:
-                search_results = await self.client.search(
-                    search_text=query,
-                    query_type="semantic",
-                    top=top,
-                    include_total_count=True,
-                )
+            search_results = await self.client.search(
+                search_text=query,
+                query_type="semantic",
+                top=top,
+                include_total_count=True,
+            )
 
-                async for result in search_results:
-                    results.append(
-                        {
-                            "score": result.get("@search.score"),
-                            "reranker_score": result.get("@search.reranker_score"),
-                            "content": result.get("content"),
-                            "title": result.get("title"),
-                            "captions": result.get("@search.captions", []),
-                        }
-                    )
+            async for result in search_results:
+                results.append(
+                    {
+                        "score": result.get("@search.score"),
+                        "reranker_score": result.get("@search.reranker_score"),
+                        "content": result.get("content"),
+                        "title": result.get("title"),
+                        "captions": result.get("@search.captions", []),
+                    }
+                )
 
             logger.info(
                 f"Semantic search returned {len(results)} results for: {query}"
@@ -163,13 +161,12 @@ class SearchService:
         """
         try:
             suggestions = []
-            async with self.client:
-                suggest_results = await self.client.suggest(
-                    search_text=query, suggester_name=suggester_name, top=top
-                )
+            suggest_results = await self.client.suggest(
+                search_text=query, suggester_name=suggester_name, top=top
+            )
 
-                async for suggestion in suggest_results:
-                    suggestions.append(suggestion.get("text"))
+            async for suggestion in suggest_results:
+                suggestions.append(suggestion.get("text"))
 
             logger.debug(f"Generated {len(suggestions)} suggestions for: {query}")
             return suggestions
@@ -189,9 +186,8 @@ class SearchService:
             Document data or None
         """
         try:
-            async with self.client:
-                document = await self.client.get_document(key=document_id)
-                return document
+            document = await self.client.get_document(key=document_id)
+            return document
         except Exception as e:
             logger.error(f"Error getting document {document_id}: {e}")
             return None
@@ -219,21 +215,20 @@ class SearchService:
             results = []
             facet_results = {}
 
-            async with self.client:
-                search_results = await self.client.search(
-                    search_text=query,
-                    filter=filters,
-                    facets=facets,
-                    top=top,
-                    include_total_count=True,
-                )
+            search_results = await self.client.search(
+                search_text=query,
+                filter=filters,
+                facets=facets,
+                top=top,
+                include_total_count=True,
+            )
 
-                async for result in search_results:
-                    results.append(result)
+            async for result in search_results:
+                results.append(result)
 
-                # Get facets if available
-                if hasattr(search_results, "get_facets"):
-                    facet_results = await search_results.get_facets()
+            # Get facets if available
+            if hasattr(search_results, "get_facets"):
+                facet_results = await search_results.get_facets()
 
             return {
                 "results": results,

@@ -3,12 +3,22 @@
 import json
 import hashlib
 from typing import Any, Optional
+from datetime import datetime, date
 import redis.asyncio as aioredis
 
 from src.config.settings import settings
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+
+class DateTimeEncoder(json.JSONEncoder):
+    """Custom JSON encoder that handles datetime objects."""
+    
+    def default(self, obj):
+        if isinstance(obj, (datetime, date)):
+            return obj.isoformat()
+        return super().default(obj)
 
 
 class CacheService:
@@ -106,7 +116,7 @@ class CacheService:
 
         try:
             ttl = ttl or self.default_ttl
-            serialized = json.dumps(value)
+            serialized = json.dumps(value, cls=DateTimeEncoder)
             await self.client.setex(key, ttl, serialized)
             logger.debug(f"Cache set: {key} (TTL: {ttl}s)")
             return True
