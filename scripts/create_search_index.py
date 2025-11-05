@@ -50,6 +50,13 @@ def create_ariba_knowledge_index():
     credential = AzureKeyCredential(api_key)
     index_client = SearchIndexClient(endpoint=endpoint, credential=credential)
     
+    # Eliminar índice existente si existe
+    try:
+        index_client.delete_index(index_name)
+        print(f"🗑️  Índice existente '{index_name}' eliminado")
+    except Exception:
+        pass  # El índice no existe, continuar
+    
     # Definir campos del índice
     fields = [
         # Campos clave
@@ -92,10 +99,9 @@ def create_ariba_knowledge_index():
             filterable=True,
             facetable=True,
         ),
-        SearchableField(
+        SimpleField(
             name="tags",
             type=SearchFieldDataType.Collection(SearchFieldDataType.String),
-            searchable=True,
             filterable=True,
             facetable=True,
         ),
@@ -153,10 +159,9 @@ def create_ariba_knowledge_index():
             filterable=True,
             facetable=True,
         ),
-        SearchableField(
+        SimpleField(
             name="related_apis",
             type=SearchFieldDataType.Collection(SearchFieldDataType.String),
-            searchable=True,
             filterable=True,
         ),
     ]
@@ -279,22 +284,54 @@ def upload_sample_documents():
     try:
         print(f"\n📤 Subiendo {len(sample_docs)} documentos de ejemplo...")
         
-        # Debug: imprimir primer documento
-        import json
-        print(f"\n🔍 Debug - Primer documento:")
-        print(json.dumps(sample_docs[0], indent=2, ensure_ascii=False))
+        # Primero probar con un documento simple sin arrays
+        print("\n🔍 Probando con documento simple (sin arrays)...")
+        simple_doc = {
+            "id": "test-1",
+            "title": "Documento de prueba",
+            "content": "Contenido de prueba",
+            "description": "Descripción de prueba",
+            "category": "Test",
+            "subcategory": "Test",
+            "document_type": "test",
+            "source_url": "https://test.com",
+            "created_date": now_iso(),
+            "modified_date": now_iso(),
+            "priority": 1,
+            "language": "es",
+            "ariba_module": "Test",
+            "ariba_process": "Test",
+        }
         
-        result = search_client.upload_documents(documents=sample_docs)
+        try:
+            result = search_client.upload_documents(documents=[simple_doc])
+            if result[0].succeeded:
+                print("   ✅ Documento simple subido correctamente")
+                print("   ℹ️  El problema está en los campos de tipo Collection")
+            else:
+                print(f"   ❌ Error: {result[0].error_message}")
+        except Exception as e:
+            print(f"   ❌ Error al subir documento simple: {str(e)}")
         
-        success_count = sum(1 for r in result if r.succeeded)
-        print(f"✅ {success_count}/{len(sample_docs)} documentos subidos exitosamente")
+        # Ahora subir documentos completos uno por uno
+        print("\n📤 Subiendo documentos completos...")
+        success_count = 0
+        for i, doc in enumerate(sample_docs, 1):
+            try:
+                # Remover @search.action ya que upload_documents lo agrega automáticamente
+                doc_copy = {k: v for k, v in doc.items() if k != "@search.action"}
+                
+                result = search_client.upload_documents(documents=[doc_copy])
+                if result[0].succeeded:
+                    print(f"   ✅ Documento {i}/{len(sample_docs)} subido: {doc_copy['title'][:50]}...")
+                    success_count += 1
+                else:
+                    print(f"   ❌ Error en documento {i}: {result[0].error_message}")
+            except Exception as doc_error:
+                print(f"   ❌ Error en documento {i}: {str(doc_error)}")
         
-        if success_count < len(sample_docs):
-            for r in result:
-                if not r.succeeded:
-                    print(f"   ❌ Error en documento {r.key}: {r.error_message}")
-        
-        return True
+        print(f"\n✅ {success_count}/{len(sample_docs)} documentos subidos exitosamente")
+        return success_count > 0
         
     except Exception as e:
         print(f"❌ Error al subir documentos: {str(e)}")
