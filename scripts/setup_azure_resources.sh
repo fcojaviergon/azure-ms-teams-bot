@@ -158,21 +158,52 @@ SEARCH_ENDPOINT="https://${SEARCH_NAME}.search.windows.net"
 
 # 6. Crear Azure Redis Cache
 echo -e "\n${GREEN}[6/8] Creando Azure Redis Cache...${NC}"
+echo -e "${YELLOW}⏳ Esto puede tardar 10-20 minutos. Creando en segundo plano...${NC}"
 az redis create \
   --name "$REDIS_NAME" \
   --resource-group "$RESOURCE_GROUP" \
   --location "$LOCATION" \
   --sku Basic \
   --vm-size c0 \
-  --output table
+  --no-wait
 
-# Obtener Redis password
-REDIS_PASSWORD=$(az redis list-keys \
-  --name "$REDIS_NAME" \
-  --resource-group "$RESOURCE_GROUP" \
-  --query "primaryKey" -o tsv)
+# Esperar a que Redis esté disponible
+echo -e "${YELLOW}Esperando a que Redis Cache esté disponible...${NC}"
+REDIS_STATUS=""
+RETRY_COUNT=0
+MAX_RETRIES=60
 
-REDIS_HOST="${REDIS_NAME}.redis.cache.windows.net"
+while [ "$REDIS_STATUS" != "Succeeded" ] && [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+  REDIS_STATUS=$(az redis show \
+    --name "$REDIS_NAME" \
+    --resource-group "$RESOURCE_GROUP" \
+    --query "provisioningState" -o tsv 2>/dev/null || echo "Creating")
+  
+  if [ "$REDIS_STATUS" = "Succeeded" ]; then
+    echo -e "\n${GREEN}✅ Redis Cache creado exitosamente${NC}"
+    break
+  fi
+  
+  CURRENT_TRY=$((RETRY_COUNT + 1))
+  echo -ne "\r  Estado: $REDIS_STATUS - Intento $CURRENT_TRY/$MAX_RETRIES (esperando 20s...)"
+  sleep 20
+  RETRY_COUNT=$((RETRY_COUNT + 1))
+done
+
+if [ "$REDIS_STATUS" != "Succeeded" ]; then
+  echo -e "\n${YELLOW}⚠️  Redis Cache aún se está creando. Continuando con otros recursos...${NC}"
+  echo -e "${YELLOW}   Verifica el estado manualmente: az redis show --name $REDIS_NAME --resource-group $RESOURCE_GROUP${NC}"
+  REDIS_PASSWORD="PENDING"
+  REDIS_HOST="${REDIS_NAME}.redis.cache.windows.net"
+else
+  # Obtener Redis password
+  REDIS_PASSWORD=$(az redis list-keys \
+    --name "$REDIS_NAME" \
+    --resource-group "$RESOURCE_GROUP" \
+    --query "primaryKey" -o tsv)
+  
+  REDIS_HOST="${REDIS_NAME}.redis.cache.windows.net"
+fi
 
 # 7. Crear Azure Key Vault
 echo -e "\n${GREEN}[7/8] Creando Azure Key Vault...${NC}"
@@ -183,6 +214,21 @@ az keyvault create \
   --output table
 
 KEYVAULT_URL="https://${KEYVAULT_NAME}.vault.azure.net/"
+
+# Asignar permisos al usuario actual
+echo -e "\n${YELLOW}Asignando permisos de Key Vault al usuario actual...${NC}"
+USER_OBJECT_ID=$(az ad signed-in-user show --query id -o tsv)
+SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+
+az role assignment create \
+  --role "Key Vault Secrets Officer" \
+  --assignee "$USER_OBJECT_ID" \
+  --scope "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.KeyVault/vaults/$KEYVAULT_NAME" \
+  --output none 2>/dev/null || echo "Rol ya asignado o en proceso..."
+
+# Esperar propagación de permisos
+echo -e "${YELLOW}Esperando propagación de permisos (30 segundos)...${NC}"
+sleep 30
 
 # Guardar secretos en Key Vault
 echo -e "\n${YELLOW}Guardando secretos en Key Vault...${NC}"
