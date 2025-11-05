@@ -2,6 +2,29 @@
 
 Bot de Microsoft Teams con arquitectura nativa de Azure e integración con SAP Ariba.
 
+## ⚠️ Estado del Proyecto
+
+**🚧 TRABAJO EN PROGRESO - MVP PARCIALMENTE COMPLETO 🚧**
+
+### ✅ Implementado (Fase 1)
+- ✅ Arquitectura modular en 3 capas
+- ✅ Servicios de Azure OpenAI (GPT-4)
+- ✅ Servicios de Azure Cognitive Search
+- ✅ Integración SAP Ariba con OAuth2
+- ✅ Sistema de caché Redis
+- ✅ Modelos de datos y configuración
+- ✅ Documentación de instalación y uso
+
+### 🚧 Pendiente (Fase 2)
+- ❌ Bot de Teams (capa de conversación)
+- ❌ API REST (endpoints HTTP)
+- ❌ Docker y docker-compose
+- ❌ Azure DevOps CI/CD pipelines
+- ❌ Infrastructure as Code (Bicep)
+- ❌ Tests unitarios e integración
+
+**📖 Para más detalles sobre lo que falta, ver: [docs/TODO.md](docs/TODO.md)**
+
 ## Arquitectura
 
 ### Componentes Azure
@@ -127,6 +150,12 @@ Bot de Microsoft Teams con arquitectura nativa de Azure e integración con SAP A
 - Fácil extensión con nuevos modelos
 - Feedback loop para mejora continua
 
+## 📚 Documentación
+
+- **[Guía de Instalación](docs/INSTALLATION.md)** - Instrucciones detalladas de instalación y configuración
+- **[Guía de Usuario](docs/USER_GUIDE.md)** - Cómo usar el bot (cuando esté completo)
+- **[Lista de Tareas](docs/TODO.md)** - Tareas pendientes y plan de implementación
+
 ## Requisitos Previos
 
 - Python 3.9+
@@ -164,11 +193,15 @@ az deployment group create \
 
 5. **Ejecutar localmente (desarrollo)**
 ```bash
+# ⚠️ PENDIENTE: El bot aún no está implementado
+# Cuando esté completo:
 python -m src.api.app
 ```
 
 6. **Ejecutar con Docker**
 ```bash
+# ⚠️ PENDIENTE: Docker aún no está configurado
+# Cuando esté completo:
 docker-compose up -d
 ```
 
