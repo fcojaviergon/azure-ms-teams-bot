@@ -116,15 +116,25 @@ class TeamsBot(ActivityHandler):
             if member.id != turn_context.activity.recipient.id:
                 logger.info(f"New member added: {member.name} ({member.id})")
 
-                # Send welcome message with card
-                welcome_card = self.card_builder.create_welcome_card()
-                card_attachment = self._create_adaptive_card_attachment(
-                    welcome_card
-                )
+                try:
+                    # Send welcome message with card
+                    welcome_card = self.card_builder.create_welcome_card()
+                    card_attachment = self._create_adaptive_card_attachment(
+                        welcome_card
+                    )
 
-                await turn_context.send_activity(
-                    MessageFactory.attachment(card_attachment)
-                )
+                    await turn_context.send_activity(
+                        MessageFactory.attachment(card_attachment)
+                    )
+                except Exception as e:
+                    logger.error(f"Error sending welcome card: {e}")
+                    # Try sending simple text message as fallback
+                    try:
+                        await turn_context.send_activity(
+                            "¡Hola! Soy el bot de SAP Ariba. Escribe '/ayuda' para ver qué puedo hacer."
+                        )
+                    except Exception as fallback_error:
+                        logger.error(f"Error sending fallback message: {fallback_error}")
 
     async def on_conversation_update_activity(
         self, turn_context: TurnContext

@@ -39,14 +39,27 @@ async def on_error(context: TurnContext, error: Exception):
         context: Turn context
         error: Exception that occurred
     """
-    logger.error(f"Bot error: {error}", exc_info=True)
+    logger.error(f"Bot error: {error}")
+    logger.error(f"Error type: {type(error).__name__}")
+
+    # Check if it's an authentication error
+    error_str = str(error)
+    if "access_token" in error_str.lower() or "unauthorized" in error_str.lower():
+        logger.error("❌ Authentication error detected!")
+        logger.error("❌ Check that MICROSOFT_APP_ID and MICROSOFT_APP_PASSWORD are correctly configured")
+        logger.error("❌ See docs/AUTHENTICATION.md for help")
+        return
+
     logger.error(f"Traceback: {traceback.format_exc()}")
 
-    # Send error message to user
-    await context.send_activity(
-        "Lo siento, ocurrió un error al procesar tu solicitud. "
-        "Por favor intenta de nuevo más tarde."
-    )
+    # Try to send error message to user (may fail if auth is broken)
+    try:
+        await context.send_activity(
+            "Lo siento, ocurrió un error al procesar tu solicitud. "
+            "Por favor intenta de nuevo más tarde."
+        )
+    except Exception as send_error:
+        logger.error(f"Could not send error message to user: {send_error}")
 
 
 ADAPTER.on_turn_error = on_error
@@ -157,6 +170,23 @@ async def on_startup(app: web.Application):
     logger.info("Starting Azure Teams Bot...")
     logger.info(f"Environment: {settings.environment}")
     logger.info(f"Port: {settings.port}")
+
+    # Validate bot credentials
+    if not settings.microsoft_app_id or not settings.microsoft_app_password:
+        logger.warning("⚠️  Bot credentials (MICROSOFT_APP_ID/PASSWORD) not configured!")
+        logger.warning("⚠️  The bot will NOT work with Microsoft Teams without valid credentials.")
+        logger.warning("⚠️  Options:")
+        logger.warning("   1. Configure valid Azure Bot credentials in .env")
+        logger.warning("   2. Use Bot Framework Emulator for local testing")
+        logger.warning("   3. See docs/AUTHENTICATION.md for more info")
+    else:
+        logger.info(f"✅ Bot credentials configured (App ID: {settings.microsoft_app_id[:8]}...)")
+
+    # Check Ariba mode
+    if settings.ariba_use_mock:
+        logger.info("🎭 Ariba MOCK mode enabled - using simulated data")
+    else:
+        logger.info("🌐 Ariba REAL mode enabled - using live API")
 
     # Initialize cache
     try:

@@ -241,22 +241,111 @@ python scripts/test_services.py
 
 ---
 
+## 🐛 Troubleshooting
+
+### Error: `'access_token'` o errores de autenticación
+
+**Síntoma**: El bot falla con un error relacionado con `access_token` cuando intenta enviar mensajes.
+
+**Causa**: Credenciales del bot (MICROSOFT_APP_ID/PASSWORD) no configuradas o inválidas.
+
+**Soluciones**:
+
+#### Opción 1: Testing Local con Bot Framework Emulator (Recomendado para desarrollo)
+
+Para desarrollo local sin configurar credenciales de Azure:
+
+1. Descarga [Bot Framework Emulator](https://github.com/Microsoft/BotFramework-Emulator/releases)
+2. En tu `.env`:
+   ```bash
+   MICROSOFT_APP_ID=
+   MICROSOFT_APP_PASSWORD=
+   # Dejar vacío para testing local
+   ```
+3. Ejecuta el bot: `python run.py`
+4. Abre Bot Framework Emulator
+5. Conecta a: `http://localhost:3978/api/messages`
+6. **No** configures App ID ni Password en el emulator (déjalos vacíos)
+
+✅ **Ventajas**: No necesitas Azure, perfecto para desarrollo y testing de funcionalidades
+
+#### Opción 2: Usar credenciales de Azure Bot Service
+
+Si quieres probar con Teams real:
+
+1. Crea un Azure Bot Service en el [portal de Azure](https://portal.azure.com)
+2. Obtén el App ID y Password/Secret
+3. Configura en `.env`:
+   ```bash
+   MICROSOFT_APP_ID=tu-app-id-de-azure
+   MICROSOFT_APP_PASSWORD=tu-password-de-azure
+   ```
+4. Configura el Bot en Azure con tu endpoint:
+   - Para local: usa [ngrok](https://ngrok.com) → `ngrok http 3978`
+   - Endpoint: `https://tu-url-ngrok.ngrok.io/api/messages`
+5. Instala el bot en Teams desde Azure
+
+### Error: "Bot credentials not configured"
+
+**Síntoma**: El log muestra advertencias `⚠️ Bot credentials not configured` al iniciar.
+
+**Solución**:
+- **Para testing local**: Esto es normal, usa Bot Framework Emulator (ver Opción 1 arriba)
+- **Para Teams real**: Configura las credenciales de Azure (ver Opción 2 arriba)
+
+### El bot no responde en Teams
+
+**Diagnóstico**:
+1. Revisa los logs - busca mensajes de error
+2. Verifica que el webhook/endpoint esté configurado correctamente en Azure
+3. Si usas ngrok, verifica que:
+   - ngrok está corriendo
+   - La URL en Azure coincide con la URL de ngrok
+4. Verifica que las credenciales en `.env` coincidan exactamente con las de Azure
+5. Verifica que el bot esté instalado en tu equipo/chat de Teams
+
+### Modo Mock no funciona
+
+**Síntoma**: Errores al consultar datos de Ariba incluso con `ARIBA_USE_MOCK=True`
+
+**Solución**:
+1. Verifica que `.env` tenga: `ARIBA_USE_MOCK=True`
+2. Reinicia el bot completamente
+3. Busca en logs al iniciar: `🎭 Ariba MOCK mode enabled`
+4. Si ves `🌐 Ariba REAL mode enabled`, revisa tu archivo `.env`
+
+---
+
 ## ❓ Preguntas Frecuentes
 
 ### ¿Necesito configurar autenticación OAuth de usuarios?
-**No**. Microsoft Teams ya autentica a los usuarios automáticamente.
+**No**. Microsoft Teams ya autentica a los usuarios automáticamente via Microsoft Entra ID.
+
+### ¿Necesito credenciales de Azure para testing local?
+**No**. Usa Bot Framework Emulator (ver sección Troubleshooting arriba) para testing local sin credenciales.
 
 ### ¿Puedo usar el bot sin credenciales de SAP Ariba?
-**Sí**. Usa `ARIBA_USE_MOCK=True` para desarrollo sin credenciales reales.
+**Sí**. Usa `ARIBA_USE_MOCK=True` para desarrollo sin credenciales reales. Los datos mock incluyen proveedores, órdenes y requisiciones de ejemplo.
 
-### ¿Cómo sé qué modo estoy usando?
-Revisa los logs al iniciar - verás 🎭 para mock o 🌐 para real.
+### ¿Cómo sé qué modo de Ariba estoy usando?
+Revisa los logs al iniciar:
+- `🎭 Ariba MOCK mode enabled` - Modo mock (desarrollo)
+- `🌐 Ariba REAL mode enabled` - Modo real (producción)
+
+### ¿Cómo sé si las credenciales del bot están configuradas?
+Busca en los logs al iniciar:
+- `✅ Bot credentials configured` - Credenciales OK
+- `⚠️ Bot credentials not configured` - Sin credenciales (usa Emulator)
 
 ### ¿Los datos mock son realistas?
-Sí, incluyen órdenes de compra, proveedores y requisiciones con datos completos en español.
+Sí, incluyen:
+- 3 proveedores con datos completos
+- 3 órdenes de compra con diferentes estados
+- 3 requisiciones de compra
+- Todo en español con moneda EUR
 
 ### ¿Puedo añadir más datos mock?
-Sí, edita `src/services/ariba_mock_service.py` en el método `_init_mock_data()`.
+Sí, edita `src/services/ariba_mock_service.py` en el método `_init_mock_data()` y añade tus propios datos.
 
 ---
 
