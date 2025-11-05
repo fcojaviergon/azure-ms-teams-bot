@@ -34,6 +34,11 @@ class AuthService:
         Raises:
             Exception: If token acquisition fails
         """
+        # MOCK MODE: Return dummy token without making API calls
+        if settings.ariba_use_mock:
+            logger.info("🎭 Using MOCK auth - returning dummy token")
+            return "mock-ariba-token-" + str(int(time.time()))
+
         # Check cache if not forcing refresh
         if not force_refresh:
             cached_token = await cache_service.get(self.token_cache_key)

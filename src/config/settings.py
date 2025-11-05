@@ -41,12 +41,16 @@ class Settings(BaseSettings):
     redis_ssl: bool = Field(default=True, alias="REDIS_SSL")
 
     # SAP Ariba Configuration
-    ariba_api_base_url: str = Field(..., alias="ARIBA_API_BASE_URL")
-    ariba_api_key: str = Field(..., alias="ARIBA_API_KEY")
-    ariba_realm: str = Field(..., alias="ARIBA_REALM")
-    ariba_client_id: str = Field(..., alias="ARIBA_CLIENT_ID")
-    ariba_client_secret: str = Field(..., alias="ARIBA_CLIENT_SECRET")
-    ariba_oauth_token_url: str = Field(..., alias="ARIBA_OAUTH_TOKEN_URL")
+    # Use mock mode for development (no real Ariba credentials needed)
+    ariba_use_mock: bool = Field(default=False, alias="ARIBA_USE_MOCK")
+
+    # Only required if not using mock mode
+    ariba_api_base_url: Optional[str] = Field(None, alias="ARIBA_API_BASE_URL")
+    ariba_api_key: Optional[str] = Field(None, alias="ARIBA_API_KEY")
+    ariba_realm: Optional[str] = Field(None, alias="ARIBA_REALM")
+    ariba_client_id: Optional[str] = Field(None, alias="ARIBA_CLIENT_ID")
+    ariba_client_secret: Optional[str] = Field(None, alias="ARIBA_CLIENT_SECRET")
+    ariba_oauth_token_url: Optional[str] = Field(None, alias="ARIBA_OAUTH_TOKEN_URL")
 
     # Application Insights
     appinsights_instrumentation_key: Optional[str] = Field(
