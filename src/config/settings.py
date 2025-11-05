@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     # Azure Bot Service
     microsoft_app_id: str = Field(..., alias="MICROSOFT_APP_ID")
     microsoft_app_password: str = Field(..., alias="MICROSOFT_APP_PASSWORD")
+    microsoft_app_tenant_id: Optional[str] = Field(None, alias="MICROSOFT_APP_TENANT_ID")
     bot_id: str = Field(..., alias="BOT_ID")
 
     # Azure OpenAI

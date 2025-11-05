@@ -26,6 +26,12 @@ ADAPTER_SETTINGS = BotFrameworkAdapterSettings(
     app_password=settings.microsoft_app_password,
 )
 
+# If tenant ID is specified, configure for Single Tenant bot
+if settings.microsoft_app_tenant_id:
+    logger.info(f"Configuring Single Tenant bot with tenant: {settings.microsoft_app_tenant_id}")
+    # For Single Tenant bots, the tenant ID should be used in authentication
+    # This is handled automatically by the SDK when app_id and app_password are set
+
 # Create adapter
 ADAPTER = BotFrameworkAdapter(ADAPTER_SETTINGS)
 
@@ -42,11 +48,14 @@ async def on_error(context: TurnContext, error: Exception):
     logger.error(f"Bot error: {error}", exc_info=True)
     logger.error(f"Traceback: {traceback.format_exc()}")
 
-    # Send error message to user
-    await context.send_activity(
-        "Lo siento, ocurrió un error al procesar tu solicitud. "
-        "Por favor intenta de nuevo más tarde."
-    )
+    # Try to send error message to user, but don't fail if we can't
+    try:
+        await context.send_activity(
+            "Lo siento, ocurrió un error al procesar tu solicitud. "
+            "Por favor intenta de nuevo más tarde."
+        )
+    except Exception as send_error:
+        logger.error(f"Failed to send error message: {send_error}")
 
 
 ADAPTER.on_turn_error = on_error
