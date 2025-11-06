@@ -6,13 +6,14 @@ Bot de Microsoft Teams con arquitectura nativa de Azure e integración con SAP A
 
 **🎉 MVP FUNCIONAL COMPLETO - LISTO PARA USAR 🎉**
 
-### ✅ Implementado
+### ✅ Implementado (MVP)
 - ✅ Arquitectura modular en 3 capas (Conversación, Lógica, Datos)
 - ✅ Bot de Microsoft Teams completo con Activity Handler
 - ✅ API REST con aiohttp y endpoints de salud
 - ✅ Azure OpenAI (GPT-4) para NLP e intenciones
 - ✅ Azure Cognitive Search para búsqueda semántica
 - ✅ Integración SAP Ariba con OAuth2 y retry logic
+- ✅ **Modo Mock para desarrollo sin credenciales** 🎭
 - ✅ Sistema de caché Redis con TTL
 - ✅ Adaptive Cards para UI rica en Teams
 - ✅ Dialog Manager para gestión de contexto
@@ -21,15 +22,44 @@ Bot de Microsoft Teams con arquitectura nativa de Azure e integración con SAP A
 - ✅ Scripts de configuración y testing
 - ✅ Documentación completa
 
-### 🚧 Pendiente (Mejoras Futuras)
+### 🎯 Roadmap a Solución Empresarial
+
+Este MVP es la base para evolucionar a una **Solución Empresarial Completa** con:
+
+**🏢 Plan Completo Documentado** → Ver **[docs/ARCHITECTURE_PLAN.md](docs/ARCHITECTURE_PLAN.md)**
+
+Incluye:
+- 🏗️ Arquitectura objetivo completa (diagrama Mermaid)
+- 📅 Plan de implementación por fases (10 fases, 26 semanas)
+- 🔧 30+ tipos de consultas automatizadas
+- 📊 Generación de reportes (PDF, Excel) y gráficos
+- 🔔 Sistema de notificaciones y alertas
+- 🌐 Interfaz web con autenticación
+- ⚙️ Azure Functions + API Management
+- 📈 Power BI Embedded
+- 🤖 RPA con Power Automate
+- 🛡️ Seguridad y cumplimiento normativo (Ley 19.628 Chile)
+- 👨‍💼 Panel de administración completo
+- 📚 Documentación y capacitación
+
+### 🚧 Pendiente (MVP → Enterprise)
+- ⏳ Expansión a 30+ tipos de consultas
+- ⏳ Azure Functions (microservicios)
+- ⏳ Generación de reportes PDF/Excel
+- ⏳ Visualización de gráficos e indicadores
+- ⏳ Sistema de notificaciones proactivas
+- ⏳ Interfaz web (URL segura)
+- ⏳ Power BI Embedded
+- ⏳ Azure API Management
+- ⏳ Panel de administración
+- ⏳ RPA para sistemas sin API
 - ⏳ Docker y docker-compose
 - ⏳ Azure DevOps CI/CD pipelines
 - ⏳ Infrastructure as Code (Bicep)
 - ⏳ Tests unitarios e integración
-- ⏳ Power BI Embedded
-- ⏳ Power Automate/Logic Apps
 
-**📖 Ver [docs/TODO.md](docs/TODO.md) para el roadmap completo**
+**📖 Ver [docs/ARCHITECTURE_PLAN.md](docs/ARCHITECTURE_PLAN.md) para arquitectura, plan detallado y timeline**
+**📖 Ver [docs/TODO.md](docs/TODO.md) para tareas específicas del MVP**
 
 ## ⚡ Inicio Rápido
 
@@ -186,11 +216,15 @@ python scripts/test_services.py
 
 ## 📚 Documentación
 
+### Para Empezar (MVP)
 - **[🚀 Quickstart](QUICKSTART.md)** - ¡Pon el bot en marcha en 10 minutos!
 - **[🔐 Autenticación y Modos](docs/AUTHENTICATION.md)** - Guía de autenticación Teams/Entra y modo mock
 - **[📖 Guía de Instalación](docs/INSTALLATION.md)** - Instrucciones detalladas de instalación y configuración
 - **[👤 Guía de Usuario](docs/USER_GUIDE.md)** - Cómo usar el bot
-- **[📋 Lista de Tareas](docs/TODO.md)** - Roadmap y mejoras futuras
+
+### Evolución a Empresa (Enterprise)
+- **[🏗️ Plan de Arquitectura Empresarial](docs/ARCHITECTURE_PLAN.md)** - **NUEVO** - Arquitectura completa, plan por fases (26 semanas), componentes técnicos, roadmap y entregables
+- **[📋 Lista de Tareas MVP](docs/TODO.md)** - Roadmap y mejoras del MVP actual
 
 ## Requisitos Previos
 
