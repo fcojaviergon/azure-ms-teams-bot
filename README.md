@@ -9,8 +9,10 @@ Bot de Microsoft Teams con arquitectura nativa de Azure e integración con SAP A
 ### ✅ Implementado (MVP)
 - ✅ Arquitectura modular en 3 capas (Conversación, Lógica, Datos)
 - ✅ Bot de Microsoft Teams completo con Activity Handler
-- ✅ API REST con aiohttp y endpoints de salud
-- ✅ Azure OpenAI (GPT-4) para NLP e intenciones
+- ✅ **API REST con FastAPI** 🚀 (migrado de aiohttp, incluye Swagger UI)
+- ✅ **PostgreSQL con pgvector** 🐘 para búsqueda vectorial y almacenamiento
+- ✅ SQLAlchemy (ORM) + Alembic (migraciones)
+- ✅ Azure OpenAI (GPT-4) para NLP e intenciones + embeddings
 - ✅ Azure Cognitive Search para búsqueda semántica
 - ✅ Integración SAP Ariba con OAuth2 y retry logic
 - ✅ **Modo Mock para desarrollo sin credenciales** 🎭
@@ -222,8 +224,11 @@ python scripts/test_services.py
 - **[📖 Guía de Instalación](docs/INSTALLATION.md)** - Instrucciones detalladas de instalación y configuración
 - **[👤 Guía de Usuario](docs/USER_GUIDE.md)** - Cómo usar el bot
 
+### Stack Tecnológico
+- **[⚡ Actualización de Stack - FastAPI y PostgreSQL](docs/STACK_UPDATE.md)** - **NUEVO** - Por qué FastAPI y PostgreSQL con pgvector, guía de migración, comparativas y beneficios
+
 ### Evolución a Empresa (Enterprise)
-- **[🏗️ Plan de Arquitectura Empresarial](docs/ARCHITECTURE_PLAN.md)** - **NUEVO** - Arquitectura completa, plan por fases (26 semanas), componentes técnicos, roadmap y entregables
+- **[🏗️ Plan de Arquitectura Empresarial](docs/ARCHITECTURE_PLAN.md)** - Arquitectura completa, plan por fases (26 semanas), componentes técnicos, roadmap y entregables
 - **[📋 Lista de Tareas MVP](docs/TODO.md)** - Roadmap y mejoras del MVP actual
 
 ## Requisitos Previos

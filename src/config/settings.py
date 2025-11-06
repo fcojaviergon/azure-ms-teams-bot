@@ -41,6 +41,14 @@ class Settings(BaseSettings):
     redis_password: str = Field(..., alias="REDIS_PASSWORD")
     redis_ssl: bool = Field(default=True, alias="REDIS_SSL")
 
+    # PostgreSQL Database (NEW)
+    postgres_host: str = Field(..., alias="POSTGRES_HOST")
+    postgres_port: int = Field(default=5432, alias="POSTGRES_PORT")
+    postgres_database: str = Field(default="teamsbot", alias="POSTGRES_DATABASE")
+    postgres_user: str = Field(..., alias="POSTGRES_USER")
+    postgres_password: str = Field(..., alias="POSTGRES_PASSWORD")
+    postgres_ssl_mode: str = Field(default="require", alias="POSTGRES_SSL_MODE")
+
     # SAP Ariba Configuration
     # Use mock mode for development (no real Ariba credentials needed)
     ariba_use_mock: bool = Field(default=False, alias="ARIBA_USE_MOCK")
