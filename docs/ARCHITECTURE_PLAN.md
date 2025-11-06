@@ -29,14 +29,28 @@ MVP Actual:
 │   ├── Activity Handler con manejo de eventos
 │   ├── Adaptive Cards para UI rica
 │   └── Dialog Manager para contexto
+├── FastAPI (Framework Web) ✅ NEW
+│   ├── API REST con OpenAPI automático
+│   ├── Async/await nativo
+│   └── Validación con Pydantic
+├── PostgreSQL + pgvector ✅ NEW
+│   ├── Modelos SQLAlchemy definidos
+│   ├── Soporte para embeddings (Vector 1536)
+│   └── Búsqueda semántica con HNSW
 ├── Azure OpenAI (GPT-4)
 │   ├── Extracción de intenciones
-│   └── Generación de respuestas
+│   ├── Generación de respuestas
+│   └── Function Calling para Computation Layer ✅ NEW
+├── Computation Layer ✅ NEW
+│   ├── Cálculos precisos con Decimal
+│   ├── Validación de monedas
+│   └── Auditoría de operaciones
 ├── Azure Cognitive Search
-│   └── Búsqueda semántica
+│   └── Búsqueda semántica (opcional con pgvector)
 ├── Integración SAP Ariba
 │   ├── Servicio MOCK para desarrollo
 │   ├── Servicio REAL con OAuth2
+│   ├── Factory pattern para switching
 │   └── Consultas: PO, PR, Proveedores
 ├── Azure Redis Cache
 │   └── Cache de tokens y datos
@@ -100,9 +114,15 @@ graph TB
     end
 
     subgraph "Capa de Inteligencia"
-        AzureOpenAI[Azure OpenAI GPT-4<br/>NLU & NLG]
+        AzureOpenAI[Azure OpenAI GPT-4<br/>Function Calling]
         PromptMgmt[Prompt Management<br/>Versionamiento]
         IntentRecog[Intent Recognition<br/>30+ Intenciones]
+    end
+
+    subgraph "Computation Layer - Python"
+        CalcLayer[AribaCalculations<br/>Decimal Precision]
+        DataAgg[Data Aggregation<br/>Sumas & Consolidación]
+        Validation[Validation Layer<br/>Currency & Formats]
     end
 
     subgraph "Azure API Management"
@@ -138,9 +158,9 @@ graph TB
     end
 
     subgraph "Almacenamiento de Datos"
-        CosmosDB[(Cosmos DB<br/>Conversaciones & Logs)]
+        PostgreSQL[(PostgreSQL + pgvector<br/>Conversaciones & Embeddings)]
         BlobStorage[(Blob Storage<br/>Archivos & Reportes)]
-        CogSearch[(Cognitive Search<br/>Knowledge Base)]
+        CogSearch[(Cognitive Search<br/>Knowledge Base - Opcional)]
         Redis[(Redis Cache<br/>Sesiones & Tokens)]
     end
 
@@ -179,7 +199,9 @@ graph TB
     DialogMgr --> MessageHandler
     MessageHandler --> IntentRecog
     IntentRecog --> AzureOpenAI
+    AzureOpenAI --> CalcLayer
 
+    CalcLayer --> APIM
     MessageHandler --> APIM
     APIM --> F1
     APIM --> F2
@@ -211,9 +233,10 @@ graph TB
     NotificationService --> EmailSvc
 
     %% Almacenamiento
-    DialogMgr --> CosmosDB
+    DialogMgr --> PostgreSQL
     DialogMgr --> Redis
-    MessageHandler --> CogSearch
+    MessageHandler --> PostgreSQL
+    CalcLayer --> PostgreSQL
     F7 --> BlobStorage
 
     %% Análisis
@@ -364,11 +387,183 @@ const INTENTS = {
 
 #### 2.3 Azure Cognitive Search
 - **Estado**: ✅ Implementado (básico)
+- **Nota**: Ahora opcional con PostgreSQL + pgvector
 - **Mejoras**:
   - Indexación de documentos (PDFs, Excel, Word)
   - Semantic Search con ranking
   - Custom skills para extracción de datos
   - Autocomplete y sugerencias
+
+---
+
+### 2.5 Computation Layer - Cálculos Precisos con Python
+
+> 📘 **Referencia**: Ver [COMPUTATION_STRATEGY.md](COMPUTATION_STRATEGY.md) para estrategia completa
+
+#### Principio Fundamental: NUNCA confiar en el LLM para cálculos
+
+**Problema**: Los LLMs pueden cometer errores aritméticos, especialmente con:
+- Sumas de múltiples valores
+- Conversiones de moneda
+- Cálculos financieros
+- Consolidación de datos
+
+**Solución**: Hybrid Approach con Azure OpenAI Function Calling
+
+#### Arquitectura del Computation Layer
+
+```python
+# 1. LLM identifica la intención (NO calcula)
+Usuario: "¿Cuál es el total de las POs aprobadas en noviembre?"
+Azure OpenAI: {
+  "function": "sum_purchase_orders",
+  "parameters": {
+    "status": "approved",
+    "month": "2025-11"
+  }
+}
+
+# 2. Python ejecuta el cálculo con precisión Decimal
+class AribaCalculations:
+    @staticmethod
+    async def sum_purchase_orders(status: str, month: str) -> Dict:
+        # Obtener datos de Ariba
+        response = await ariba.get_purchase_orders(filters={
+            "status": status,
+            "date_range": {"month": month}
+        })
+
+        # CÁLCULO PRECISO con Decimal
+        total = Decimal('0')
+        for po in response.records:
+            # Validar moneda
+            if po['currency'] != 'USD':
+                raise ValueError(f"Mixed currencies: {po['currency']}")
+
+            # Sumar usando Decimal (precisión exacta)
+            total += Decimal(str(po['total_amount']))
+
+        # Auditoría
+        audit_log = {
+            "calculation_type": "sum_purchase_orders",
+            "input_params": {"status": status, "month": month},
+            "num_records": len(response.records),
+            "result": float(total),
+            "calculated_at": datetime.utcnow().isoformat()
+        }
+
+        return {
+            "total_amount": float(total),
+            "currency": "USD",
+            "count": len(response.records),
+            "audit": audit_log
+        }
+
+# 3. LLM presenta el resultado (NO lo calcula)
+Azure OpenAI: "He encontrado 23 órdenes de compra aprobadas en noviembre,
+con un total de $1,234,567.89 USD."
+```
+
+#### Function Calling Definitions
+
+```python
+# Definición de funciones para Azure OpenAI
+ARIBA_FUNCTIONS = [
+    {
+        "name": "sum_purchase_orders",
+        "description": "Calcula el total de órdenes de compra según filtros",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "enum": ["approved", "pending", "rejected"],
+                    "description": "Estado de las POs"
+                },
+                "month": {
+                    "type": "string",
+                    "description": "Mes en formato YYYY-MM"
+                },
+                "supplier_id": {
+                    "type": "string",
+                    "description": "ID del proveedor (opcional)"
+                }
+            },
+            "required": ["status", "month"]
+        }
+    },
+    {
+        "name": "calculate_spending_by_category",
+        "description": "Calcula gastos totales por categoría",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "date_from": {"type": "string", "description": "Fecha inicio (YYYY-MM-DD)"},
+                "date_to": {"type": "string", "description": "Fecha fin (YYYY-MM-DD)"},
+                "categories": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Lista de categorías (opcional)"
+                }
+            },
+            "required": ["date_from", "date_to"]
+        }
+    }
+    # ... 30+ funciones más
+]
+```
+
+#### Principios de Seguridad para Cálculos
+
+✅ **Usar Decimal, NO float**:
+```python
+# ❌ MAL - Pérdida de precisión
+total = 0.0
+for po in pos:
+    total += po['amount']  # float - errores de redondeo
+
+# ✅ BIEN - Precisión exacta
+total = Decimal('0')
+for po in pos:
+    total += Decimal(str(po['amount']))
+```
+
+✅ **Validar monedas SIEMPRE**:
+```python
+# ❌ MAL - Sumar diferentes monedas
+total = sum([po['amount'] for po in pos])
+
+# ✅ BIEN - Validar moneda antes de sumar
+currency = None
+total = Decimal('0')
+for po in pos:
+    if currency is None:
+        currency = po['currency']
+    elif po['currency'] != currency:
+        raise ValueError(f"Cannot sum {po['currency']} with {currency}")
+    total += Decimal(str(po['amount']))
+```
+
+✅ **Auditar TODO**:
+```python
+# Registrar cada cálculo para compliance (Ley 19.628)
+await log_calculation({
+    "user_id": user_id,
+    "calculation": "sum_purchase_orders",
+    "inputs": {...},
+    "result": float(total),
+    "timestamp": datetime.utcnow()
+})
+```
+
+#### Ventajas del Computation Layer
+
+- ✅ **Precisión**: Cálculos exactos con Decimal
+- ✅ **Auditoría**: Cada cálculo registrado
+- ✅ **Validación**: Checks de moneda, rangos, tipos
+- ✅ **Performance**: Caching de resultados frecuentes
+- ✅ **Mantenibilidad**: Lógica de negocio separada del LLM
+- ✅ **Testing**: Unit tests para cada función
 
 ---
 
@@ -523,80 +718,135 @@ RPA Flow:
 
 ### 6. Almacenamiento y Datos
 
-#### 6.1 Azure Cosmos DB
-- **Estado**: ❌ No implementado
-- **Propósito**: Base de datos NoSQL para:
+> 📘 **Referencia**: Ver [STACK_UPDATE.md](STACK_UPDATE.md) para justificación completa de la decisión PostgreSQL vs Cosmos DB
+
+#### 6.1 PostgreSQL con pgvector (Azure Database for PostgreSQL)
+- **Estado**: ✅ Implementado (modelos definidos)
+- **Ventajas sobre Cosmos DB**:
+  - ✅ **Costo**: ~$25-30/mes vs $75/mes de Cosmos DB (~60% ahorro)
+  - ✅ **Búsqueda vectorial nativa**: pgvector para embeddings (1536 dims)
+  - ✅ **ACID compliance**: Transacciones robustas
+  - ✅ **SQL estándar**: Queries complejas más sencillas
+  - ✅ **Índices HNSW**: Búsqueda vectorial ultra-rápida
+
+- **Propósito**: Base de datos relacional con capacidades de IA para:
   - Historial de conversaciones
-  - Contexto de diálogos
+  - Búsqueda semántica con embeddings
   - Configuración de usuarios
   - Logs de auditoría
   - Configuración de alertas
+  - Knowledge base con vectores
 
-**Modelo de Datos**:
-```javascript
-// Colección: Conversations
-{
-  "id": "conv-12345",
-  "userId": "user@sgscm.com",
-  "channelId": "msteams",
-  "conversationId": "teams-conv-abc",
-  "messages": [
-    {
-      "timestamp": "2025-11-06T10:30:00Z",
-      "role": "user",
-      "content": "Muéstrame las POs pendientes",
-      "intent": "list_pos",
-      "entities": { "status": "pending" }
-    },
-    {
-      "timestamp": "2025-11-06T10:30:05Z",
-      "role": "assistant",
-      "content": "He encontrado 15 POs pendientes...",
-      "data": { ... }
-    }
-  ],
-  "metadata": {
-    "startTime": "2025-11-06T10:30:00Z",
-    "lastActivity": "2025-11-06T10:35:00Z",
-    "department": "Procurement",
-    "location": "Santiago"
-  }
-}
+**Modelo de Datos (SQLAlchemy)**:
+```python
+# Tabla: conversations
+class Conversation(Base):
+    __tablename__ = 'conversations'
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String(255), index=True)
+    channel_id = Column(String(50))  # 'msteams', 'webchat'
+    conversation_id = Column(String(255), unique=True)
+    start_time = Column(DateTime, default=datetime.utcnow)
+    last_activity = Column(DateTime, default=datetime.utcnow)
+    department = Column(String(100))
+    location = Column(String(100))
+    metadata = Column(JSONB)  # Flexible metadata
 
-// Colección: UserSettings
-{
-  "id": "user@sgscm.com",
-  "displayName": "Juan Pérez",
-  "department": "Procurement",
-  "role": "Buyer",
-  "alerts": [
-    {
-      "type": "po_approval",
-      "threshold": "> $50000",
-      "channels": ["teams", "email"]
-    }
-  ],
-  "preferences": {
-    "language": "es-CL",
-    "timezone": "America/Santiago",
-    "defaultView": "summary"
-  }
-}
+    # Relación con mensajes
+    messages = relationship("Message", back_populates="conversation")
 
-// Colección: Alerts
-{
-  "id": "alert-67890",
-  "userId": "user@sgscm.com",
-  "type": "contract_expiry",
-  "condition": {
-    "field": "expiryDate",
-    "operator": "within",
-    "value": "30 days"
-  },
-  "active": true,
-  "lastTriggered": "2025-11-05T08:00:00Z",
-  "frequency": "daily"
-}
+# Tabla: messages (con embeddings para búsqueda semántica)
+class Message(Base):
+    __tablename__ = 'messages'
+    id = Column(Integer, primary_key=True)
+    conversation_id = Column(Integer, ForeignKey('conversations.id'))
+    timestamp = Column(DateTime, default=datetime.utcnow, index=True)
+    role = Column(String(50))  # 'user' or 'assistant'
+    content = Column(Text)
+    embedding = Column(Vector(1536))  # OpenAI ada-002 embeddings
+    intent = Column(String(100), index=True)
+    entities = Column(JSONB)
+    response_time_ms = Column(Integer)
+
+    # Índice HNSW para búsqueda vectorial rápida
+    __table_args__ = (
+        Index('idx_message_embedding_cosine', 'embedding',
+              postgresql_using='hnsw',
+              postgresql_ops={'embedding': 'vector_cosine_ops'}),
+    )
+
+# Tabla: user_settings
+class UserSettings(Base):
+    __tablename__ = 'user_settings'
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String(255), unique=True, index=True)
+    display_name = Column(String(255))
+    email = Column(String(255))
+    department = Column(String(100))
+    role = Column(String(50))  # 'Admin', 'Buyer', 'Finance', 'Viewer'
+    preferences = Column(JSONB)  # {"language": "es-CL", "timezone": "America/Santiago"}
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+# Tabla: alerts
+class Alert(Base):
+    __tablename__ = 'alerts'
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String(255), index=True)
+    alert_type = Column(String(50))  # 'po_approval', 'contract_expiry', etc.
+    condition = Column(JSONB)  # {"field": "expiryDate", "operator": "within", "value": "30 days"}
+    active = Column(Boolean, default=True)
+    channels = Column(ARRAY(String))  # ['teams', 'email']
+    last_triggered = Column(DateTime)
+    frequency = Column(String(20))  # 'daily', 'weekly', 'realtime'
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+# Tabla: knowledge_base (con vectores para RAG)
+class KnowledgeBase(Base):
+    __tablename__ = 'knowledge_base'
+    id = Column(Integer, primary_key=True)
+    title = Column(String(500))
+    content = Column(Text)
+    embedding = Column(Vector(1536))
+    source = Column(String(255))  # 'manual', 'sharepoint', 'ariba_docs'
+    category = Column(String(100))
+    tags = Column(ARRAY(String))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index('idx_kb_embedding_cosine', 'embedding',
+              postgresql_using='hnsw',
+              postgresql_ops={'embedding': 'vector_cosine_ops'}),
+    )
+
+# Tabla: audit_log
+class AuditLog(Base):
+    __tablename__ = 'audit_logs'
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String(255), index=True)
+    action = Column(String(100))  # 'query', 'export', 'config_change'
+    resource = Column(String(255))
+    details = Column(JSONB)
+    ip_address = Column(String(50))
+    timestamp = Column(DateTime, default=datetime.utcnow, index=True)
+```
+
+**Búsqueda Semántica con pgvector**:
+```python
+# Ejemplo: Buscar mensajes similares usando cosine similarity
+from sqlalchemy import select, func
+
+async def search_similar_messages(query_embedding: List[float], limit: int = 5):
+    """Buscar mensajes similares usando pgvector."""
+    async with AsyncSessionLocal() as session:
+        # Cosine distance (menor = más similar)
+        stmt = select(Message).order_by(
+            Message.embedding.cosine_distance(query_embedding)
+        ).limit(limit)
+
+        result = await session.execute(stmt)
+        return result.scalars().all()
 ```
 
 #### 6.2 Azure Blob Storage
@@ -1318,7 +1568,8 @@ Admin Portal:
 | **Consultas Automatizadas** | 6 tipos | 30+ tipos | 24+ | 🔴 Alta |
 | **Azure Functions** | No | Sí (30+ functions) | 100% | 🔴 Alta |
 | **API Management** | No | Sí | 100% | 🔴 Alta |
-| **Cosmos DB** | No | Sí | 100% | 🔴 Alta |
+| **PostgreSQL + pgvector** | ✅ Modelos definidos | ✅ En producción | 20% | 🔴 Alta |
+| **Computation Layer** | ✅ Diseñado | ✅ Implementado | 30% | 🔴 Alta |
 | **Blob Storage** | No | Sí | 100% | 🟡 Media |
 | **Generación PDF** | No | Sí | 100% | 🟡 Media |
 | **Generación Excel** | No | Sí | 100% | 🟡 Media |
@@ -1496,19 +1747,23 @@ Mes 6 (Semanas 23-26): FASES 9-10 - Producción
 | Azure OpenAI Service | GPT-4 (estimado 1M tokens/mes) | $600 |
 | Azure Functions | Premium Plan (EP1) | $180 |
 | API Management | Developer Tier | $50 |
-| Cosmos DB | Serverless (25GB) | $75 |
+| **PostgreSQL + pgvector** | **Flexible Server B2s (2 vCores, 4GB)** | **$25-30** |
 | Blob Storage | Hot Tier (100GB) | $20 |
 | Redis Cache | Basic C1 (1GB) | $55 |
-| Cognitive Search | Basic | $75 |
+| Cognitive Search (opcional) | Basic | $75 |
 | App Service | B2 (Web App) | $100 |
 | Static Web Apps | Standard | $25 |
 | Power BI Embedded | A1 | $100 |
 | Application Insights | Pay-as-you-go (5GB) | $30 |
 | Log Analytics | Pay-as-you-go | $15 |
 | Azure Sentinel | Pay-as-you-go | $50 |
-| **TOTAL ESTIMADO** | | **~$1,875/mes** |
+| **TOTAL ESTIMADO** | | **~$1,825/mes** |
 
-*Nota: Costos pueden variar según uso real. Incluir 20% adicional para overhead.*
+**Notas**:
+- Costos pueden variar según uso real. Incluir 20% adicional para overhead.
+- **Ahorro con PostgreSQL**: ~$45-50/mes vs Cosmos DB (60% reducción en costos de BD)
+- Cognitive Search ahora opcional gracias a pgvector (puede ahorrar $75/mes adicionales)
+- **Total con optimización**: ~$1,750/mes si se elimina Cognitive Search
 
 ---
 
